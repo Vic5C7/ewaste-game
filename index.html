@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>E-waste Recycling RPG (Melbourne Campus)</title>
+  <style>
+    canvas {
+      border: 2px solid #000;
+      display: block;
+      margin: 20px auto;
+    }
+    body {
+      text-align: center;
+      font-family: Arial, sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <h1>E-waste Recycling RPG</h1>
+  <p>Use arrow keys to move. Press <strong>F</strong> to pick up. Press <strong>G</strong> to recycle.</p>
+  <canvas id="gameCanvas" width="3178" height="4493"></canvas>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const TILE_SIZE = 40;
+    const MAP_WIDTH = canvas.width / TILE_SIZE;
+    const MAP_HEIGHT = canvas.height / TILE_SIZE;
+
+    const bgImage = new Image();
+    bgImage.src = 'unimelb_map_portrait.png'; // 需放入同目录中
+
+    const ewasteTypes = [
+      { type: "Phone", category: "Mobile" },
+      { type: "iPad", category: "Mobile" },
+      { type: "Smartwatch", category: "Mobile" },
+      { type: "Tablet", category: "Mobile" },
+      { type: "Laptop", category: "Mobile" },
+      { type: "Battery", category: "Accessory" },
+      { type: "Power Bank", category: "Accessory" },
+      { type: "Charger", category: "Accessory" },
+      { type: "USB Cable", category: "Accessory" },
+      { type: "Headphones", category: "Accessory" }
+    ];
+
+    const recyclePoints = [
+      { x: 13, y: 18, category: "Mobile", name: "UMSU Info Centre" },
+      { x: 17, y: 10, category: "Accessory", name: "ERC Library" },
+      { x: 15, y: 13, category: "Accessory", name: "Student Pavilion" }
+    ];
+
+    const player = { x: 10, y: 20, holding: null };
+    let activeEwaste = [];
+    let score = 0;
+    let timeLeft = 120; // 2 minutes
+    let gameOver = false;
+
+    function getRandomEmptyPosition() {
+      let pos;
+      do {
+        pos = {
+          x: Math.floor(Math.random() * MAP_WIDTH),
+          y: Math.floor(Math.random() * MAP_HEIGHT)
+        };
+      } while (
+        (player.x === pos.x && player.y === pos.y) ||
+        activeEwaste.some(e => e.x === pos.x && e.y === pos.y) ||
+        recyclePoints.some(p => p.x === pos.x && p.y === pos.y)
+      );
+      return pos;
+    }
+
+    function spawnEwaste() {
+      const available = ewasteTypes[Math.floor(Math.random() * ewasteTypes.length)];
+      const pos = getRandomEmptyPosition();
+      activeEwaste.push({ x: pos.x, y: pos.y, ...available });
+    }
+
+    function drawTile(x, y, color, label) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+      ctx.strokeStyle = "black";
+      ctx.strokeRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+      if (label) {
+        ctx.fillStyle = "black";
+        ctx.font = "12px Arial";
+        ctx.fillText(label, x * TILE_SIZE + 2, y * TILE_SIZE + 30);
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (bgImage.complete) ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+
+      recyclePoints.forEach(p => drawTile(p.x, p.y, "orange", p.name));
+      activeEwaste.forEach(item => drawTile(item.x, item.y, "green", item.type));
+      drawTile(player.x, player.y, "blue", "You");
+
+      ctx.fillStyle = "black";
+      ctx.font = "28px Arial"; // 提高字体大小
+      ctx.fillText(`Score: ${score}`, 30, 50);
+      ctx.fillText(`Holding: ${player.holding ? player.holding.type : "None"}`, 30, 90);
+      ctx.fillText(`Time left: ${timeLeft}s`, 30, 130);
+
+      if (gameOver) {
+        ctx.fillStyle = "red";
+        ctx.font = "24px Arial";
+        ctx.fillText("⏰ Time's Up! Final Score: " + score, canvas.width / 2 - 150, canvas.height / 2);
+      }
+    }
+
+    function pickup() {
+      if (player.holding) return;
+      const index = activeEwaste.findIndex(e => e.x === player.x && e.y === player.y);
+      if (index !== -1) {
+        player.holding = activeEwaste[index];
+        activeEwaste.splice(index, 1);
+      }
+    }
+
+    function recycleItem() {
+      if (!player.holding) return;
+      const bin = recyclePoints.find(p => p.x === player.x && p.y === player.y);
+      if (bin) {
+        if (bin.category === player.holding.category) {
+          score += 2;
+          spawnEwaste();
+          player.holding = null;
+        } else {
+          score -= 1;
+          alert("Wrong bin! Please try another recycling point.");
+        }
+      }
+    }
+
+    function move(dir) {
+      if (gameOver) return;
+      if (dir === "up") player.y = Math.max(0, player.y - 1);
+      if (dir === "down") player.y = Math.min(MAP_HEIGHT - 1, player.y + 1);
+      if (dir === "left") player.x = Math.max(0, player.x - 1);
+      if (dir === "right") player.x = Math.min(MAP_WIDTH - 1, player.x + 1);
+    }
+
+    document.addEventListener("keydown", e => {
+      switch (e.key) {
+        case "ArrowUp": move("up"); break;
+        case "ArrowDown": move("down"); break;
+        case "ArrowLeft": move("left"); break;
+        case "ArrowRight": move("right"); break;
+        case "f": case "F": pickup(); break;
+        case "g": case "G": recycleItem(); break;
+      }
+      draw();
+    });
+
+    for (let i = 0; i < 4; i++) spawnEwaste();
+
+    const interval = setInterval(() => {
+      if (timeLeft > 0) {
+        timeLeft--;
+        draw();
+      } else {
+        clearInterval(interval);
+        gameOver = true;
+        draw();
+        setTimeout(() => alert("⏰ Time's Up! Your Final Score: " + score), 500);
+      }
+    }, 1000);
+
+    draw();
+  </script>
+</body>
+</html>
