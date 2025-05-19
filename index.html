@@ -28,31 +28,43 @@
     const MAP_HEIGHT = canvas.height / TILE_SIZE;
 
     const bgImage = new Image();
-    bgImage.src = 'unimelb_map_portrait.png'; // 需放入同目录中
+    bgImage.src = 'unimelb_map_portrait.png';
 
     const ewasteTypes = [
-      { type: "Phone", category: "Mobile" },
-      { type: "iPad", category: "Mobile" },
-      { type: "Smartwatch", category: "Mobile" },
-      { type: "Tablet", category: "Mobile" },
-      { type: "Laptop", category: "Mobile" },
-      { type: "Battery", category: "Accessory" },
-      { type: "Power Bank", category: "Accessory" },
-      { type: "Charger", category: "Accessory" },
-      { type: "USB Cable", category: "Accessory" },
-      { type: "Headphones", category: "Accessory" }
+      { type: "Phone", category: "Ewaste" },
+      { type: "Laptop", category: "Ewaste" },
+      { type: "Charger", category: "Ewaste" },
+      { type: "USB Cable", category: "Ewaste" },
+      { type: "Wireless Mouse", category: "Ewaste" },
+      { type: "Mechanical Keyboard", category: "Ewaste" },
+      { type: "HDMI Cable", category: "Ewaste" },
+      { type: "Earbuds", category: "Ewaste" },
+      { type: "Webcam", category: "Ewaste" },
+      { type: "Smart ID Card", category: "Ewaste" },
+      { type: "USB Hub", category: "Ewaste" },
+      { type: "Broken Calculator", category: "Ewaste" },
+      { type: "Battery", category: "Battery" },
+      { type: "Button Battery", category: "Battery" },
+      { type: "Rechargeable Battery", category: "Battery" },
+      { type: "Light Bulb", category: "Light" },
+      { type: "Fluorescent Tube", category: "Light" },
+      { type: "Portable Light Stick", category: "Light" }
     ];
 
     const recyclePoints = [
-      { x: 13, y: 18, category: "Mobile", name: "UMSU Info Centre" },
-      { x: 17, y: 10, category: "Accessory", name: "ERC Library" },
-      { x: 15, y: 13, category: "Accessory", name: "Student Pavilion" }
+      { x: 17, y: 10, category: "Battery", name: "Battery Bucket (ERC Library)" },
+      { x: 13, y: 18, category: "Battery", name: "UMSU Information Desk (Union House)" },
+      { x: 10, y: 27, category: "Battery", name: "Engineering C (Battery Drop-off)" },
+      { x: 12, y: 27, category: "Battery", name: "Engineering D (Battery Drop-off)" },
+      { x: 15, y: 22, category: "Battery", name: "Alan Gilbert Building (Battery Drop-off)" },
+      { x: 13, y: 18, category: "Ewaste", name: "UMSU Information Desk (Union House)" },
+      { x: 6, y: 4, category: "Light", name: "Physics loading area off Swanston Street" }
     ];
 
     const player = { x: 10, y: 20, holding: null };
     let activeEwaste = [];
     let score = 0;
-    let timeLeft = 120; // 2 minutes
+    let timeLeft = 120;
     let gameOver = false;
 
     function getRandomEmptyPosition() {
@@ -97,7 +109,7 @@
       drawTile(player.x, player.y, "blue", "You");
 
       ctx.fillStyle = "black";
-      ctx.font = "28px Arial"; // 提高字体大小
+      ctx.font = "28px Arial";
       ctx.fillText(`Score: ${score}`, 30, 50);
       ctx.fillText(`Holding: ${player.holding ? player.holding.type : "None"}`, 30, 90);
       ctx.fillText(`Time left: ${timeLeft}s`, 30, 130);
@@ -120,16 +132,14 @@
 
     function recycleItem() {
       if (!player.holding) return;
-      const bin = recyclePoints.find(p => p.x === player.x && p.y === player.y);
+      const bin = recyclePoints.find(p => p.x === player.x && p.y === player.y && p.category === player.holding.category);
       if (bin) {
-        if (bin.category === player.holding.category) {
-          score += 2;
-          spawnEwaste();
-          player.holding = null;
-        } else {
-          score -= 1;
-          alert("Wrong bin! Please try another recycling point.");
-        }
+        score += 2;
+        spawnEwaste();
+        player.holding = null;
+      } else {
+        score -= 1;
+        alert("Wrong bin! Please try another recycling point.");
       }
     }
 
